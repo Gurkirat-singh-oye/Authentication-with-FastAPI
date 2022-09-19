@@ -1,4 +1,3 @@
-from typing import Union
 from fastapi import FastAPI, Depends, HTTPException
 from fastapi.security import OAuth2PasswordRequestForm
 from services import Auth
@@ -16,14 +15,14 @@ app = FastAPI()
 async def defualtpage():
     return  (RespStruct(message="default page"))
 
+
 @app.get ("/api/user/me")
 async def whoami(curr_user: UserOP | User = Depends(Auth.get_user)):
     return curr_user
 
-# yet to see what is encrypted url which is to return
+
 @app.post ("/api/user/client/register")
 async def users(user: UserRr):
-    
     #   check if client exists
     if collec.find_one({ "email" : user.email }):
         return  (RespStruct(message="email already exists"))
@@ -39,6 +38,7 @@ async def users(user: UserRr):
         ver.Message = f"hi, { user.name } use this link to activate your account http://localhost:8000/api/user/client/verify?email={user.email}&hash={thehash}"
         ver.sendlink()
         return  (RespStruct(message=f"user registered, verification link sent to {user.email}"))
+
 
 
 @app.post ("/api/user/{userLevel}/login" , response_model=  UserToken)
@@ -75,10 +75,14 @@ async def login(user: Userln, userLevel: str):
             raise HTTPException(401, "Authentication Failed")
     raise HTTPException(404, "Not Found")
 
+
+
 @app.get ("/api/user/logout")
 async def logout(token: str = Depends(Auth.oauth2_scheme), curr_user: UserOP | User = Depends(Auth.get_user)):
     db["JWTblacklist"].insert_one({"token" : token})
     return HTTPException(200, f"{curr_user.name} logged out")
+
+
 
 @app.get ("/api/user/client/verify")
 async def verify(email: str, hash: str):
@@ -91,6 +95,7 @@ async def verify(email: str, hash: str):
             )
             return  (RespStruct(message="email verified, now you can login"))
     return  (RespStruct(message="This link is not valid"))
+
 
 
 @app.post ("/api/user/operations/userability")
@@ -114,15 +119,15 @@ async def disuser(user_to_dis: UserAbi, curr_user: UserOP | User = Depends(Auth.
         raise HTTPException(401)
 
 
-@app.post ("/api/auth", response_model=Token)
-async def auth( form_data: OAuth2PasswordRequestForm = Depends()):
-    print(form_data.username)
-    user = collec.find_one({"email" : form_data.username})
-    if not user:
-        raise HTTPException(400, "Incorrect")
-    user_validate = User(**user)
-    if not Auth.verify_password(form_data.password, user_validate.passhash):
-        raise HTTPException(400, "Incorrect")
-    access_token = Auth.create_jwt({"email" : user_validate.email})
+# @app.post ("/api/auth", response_model=Token)
+# async def auth( form_data: OAuth2PasswordRequestForm = Depends()):
+#     print(form_data.username)
+#     user = collec.find_one({"email" : form_data.username})
+#     if not user:
+#         raise HTTPException(400, "Incorrect")
+#     user_validate = User(**user)
+#     if not Auth.verify_password(form_data.password, user_validate.passhash):
+#         raise HTTPException(400, "Incorrect")
+#     access_token = Auth.create_jwt({"email" : user_validate.email})
 
-    return Token(access_token=access_token)
+#     return Token(access_token=access_token)
